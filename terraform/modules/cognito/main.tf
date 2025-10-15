@@ -4,6 +4,14 @@ resource "aws_cognito_user_pool" "main" {
   auto_verified_attributes = var.auto_verified_attributes
   deletion_protection      = local.deletion_protection
   user_pool_tier           = var.user_pool_tier
+  username_attributes      = var.user_pool_username_attributes
+
+  schema {
+    name                = "email"
+    attribute_data_type = "String"
+    mutable             = true
+    required            = true
+  }
 
   password_policy {
     minimum_length    = var.password_policy_min_length
@@ -16,6 +24,8 @@ resource "aws_cognito_user_pool" "main" {
 }
 
 resource "aws_cognito_user_pool_client" "main_client" {
+
+  depends_on = [aws_cognito_user_pool.main]
 
   name         = var.user_pool_client_name
   user_pool_id = aws_cognito_user_pool.main.id
@@ -32,6 +42,7 @@ resource "aws_cognito_user_pool_client" "main_client" {
   allowed_oauth_scopes                 = local.allowed_oauth_scopes
   callback_urls                        = local.callback_urls
   logout_urls                          = local.logout_urls
+  supported_identity_providers         = local.supported_identity_providers
 
   token_validity_units {
     access_token  = "hours"
@@ -42,6 +53,9 @@ resource "aws_cognito_user_pool_client" "main_client" {
 }
 
 resource "aws_cognito_user_pool_domain" "main_domain" {
+
+  depends_on = [aws_cognito_user_pool.main]
+
   domain          = var.user_pool_domain_name
   user_pool_id    = aws_cognito_user_pool.main.id
   certificate_arn = local.certificate_arn

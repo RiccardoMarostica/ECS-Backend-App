@@ -40,6 +40,12 @@ variable "auto_verified_attributes" {
   default     = ["email"]
 }
 
+variable "user_pool_username_attributes" {
+  description = "The attributes to be set as username"
+  type        = list(string)
+  default     = ["email"]
+}
+
 variable "deletion_protection" {
   description = "Whether to enable deletion protection"
   type        = bool
@@ -66,13 +72,13 @@ variable "user_pool_client_name" {
 variable "user_pool_client_access_token_validity" {
   description = "The validity of the access token"
   type        = number
-  default     = 60
+  default     = 24
 }
 
 variable "user_pool_client_id_token_validity" {
   description = "The validity of the id token"
   type        = number
-  default     = 60
+  default     = 24
 }
 
 variable "user_pool_client_refresh_token_validity" {
@@ -102,7 +108,7 @@ variable "user_pool_client_allow_oauth_flows" {
 variable "user_pool_client_allowed_oauth_flows" {
   description = "The allowed OAuth flows"
   type        = list(string)
-  default     = ["client_credentials"]
+  default     = ["code"]
 }
 
 variable "user_pool_client_allowed_oauth_scopes" {
@@ -114,13 +120,13 @@ variable "user_pool_client_allowed_oauth_scopes" {
 variable "user_pool_client_callback_urls" {
   description = "The callback URLs"
   type        = list(string)
-  default     = ["https://localhost/callback"]
+  default     = ["https://localhost/callback", "https://oauth.pstmn.io/v1/callback"]
 }
 
 variable "user_pool_client_logout_urls" {
   description = "The logout URLs"
   type        = list(string)
-  default     = ["https://localhost/callback"]
+  default     = ["https://localhost/logout"]
 }
 
 ## User Pool domain variables
@@ -132,4 +138,5 @@ variable "user_pool_domain_name" {
 variable "user_pool_domain_certificate_arn" {
   description = "The ARN of the ACM Certificate issued by AWS"
   type        = string
+  default     = ""
 }
