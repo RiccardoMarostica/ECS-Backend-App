@@ -14,3 +14,16 @@ module "rest_api" {
   rest_api_authorizer_cognito_provider = [module.cognito_user_pool.cognito_user_pool_arn]
   rest_api_stage_name                  = var.environment
 }
+
+module "vpc" {
+  source = "../../modules/vpc"
+
+  aws_region                      = var.aws_region
+  environment                     = var.environment
+  project_name                    = var.project_name
+  vpc_cidr_block                  = var.vpc_cidr_block
+  vpc_subnet_public_a_cidr_block  = var.vpc_subnet_public_a_cidr_block
+  vpc_subnet_public_b_cidr_block  = var.vpc_subnet_public_b_cidr_block
+  vpc_subnet_private_a_cidr_block = var.vpc_subnet_private_a_cidr_block
+  vpc_subnet_private_b_cidr_block = var.vpc_subnet_private_b_cidr_block
+}

@@ -13,3 +13,28 @@ variable "project_name" {
   description = "The name of the project"
   type = string
 }
+
+variable "vpc_cidr_block" {
+  description = "The CIDR block of the VPC"
+  type = string
+}
+
+variable "vpc_subnet_public_a_cidr_block" {
+  description = "The CIDR block that will be used for the public subnet A"
+  type        = string  
+}
+
+variable "vpc_subnet_public_b_cidr_block" {
+  description = "The CIDR block that will be used for the public subnet B"
+  type        = string
+}
+
+variable "vpc_subnet_private_a_cidr_block" {
+  description = "The CIDR block that will be used for the private subnet A"
+  type        = string
+}
+
+variable "vpc_subnet_private_b_cidr_block" {
+  description = "The CIDR block that will be used for the private subnet B"
+  type        = string
+}
