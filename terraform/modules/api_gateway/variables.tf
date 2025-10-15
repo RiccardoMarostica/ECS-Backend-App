@@ -28,3 +28,31 @@ variable "rest_api_endpoint_type" {
     error_message = "The endpoint type must be \"EDGE\", \"REGIONAL\"."
   }
 }
+
+variable "rest_api_authorizer_name" {
+  description = "The name of the authorizer"
+  type        = string
+}
+
+variable "rest_api_authorizer_type" {
+  description = "The type of the authorizer"
+  type        = string
+  default     = "COGNITO_USER_POOLS"
+}
+
+variable "rest_api_authorizer_ttl" {
+  description = "The TTL of cached authorizer results"
+  type        = number
+  default     = 300
+}
+
+variable "rest_api_authorizer_cognito_provider" {
+  description = "List of the Amazon Cognito user pool ARNs"
+  type        = list(string)
+  default     = []
+}
+
+variable "rest_api_stage_name" {
+  description = "The name of the stage, which is exactly the name of the environment"
+  type        = string
+}
