@@ -38,6 +38,43 @@ resource "aws_api_gateway_integration" "proxy" {
   resource_id = aws_api_gateway_resource.proxy.id
   http_method = aws_api_gateway_method.proxy.http_method
   type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "mock_200" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_method.proxy.resource_id
+  http_method = aws_api_gateway_method.proxy.http_method
+  status_code = "200"
+
+  # Optionally define headers the client should expect
+  response_models = {
+    "application/json" = "Empty" # Use "Empty" for no specific model
+  }
+}
+
+resource "aws_api_gateway_integration_response" "mock" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_method.proxy.resource_id
+  http_method = aws_api_gateway_method.proxy.http_method
+  status_code = aws_api_gateway_method_response.mock_200.status_code
+
+  # This is where you define the static JSON body of your mock response.
+  response_templates = {
+    "application/json" = <<EOF
+{
+  "message": "Success! Your Cognito authorizer is working correctly.",
+  "timestamp": "$context.requestTime",
+  "requestId": "$context.requestId"
+}
+EOF
+  }
+
+  # This depends_on ensures the method response is created before this one.
+  depends_on = [aws_api_gateway_method_response.mock_200]
 }
 
 resource "aws_api_gateway_deployment" "main" {
