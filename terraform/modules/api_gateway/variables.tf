@@ -56,3 +56,13 @@ variable "rest_api_stage_name" {
   description = "The name of the stage, which is exactly the name of the environment"
   type        = string
 }
+
+variable "alb_vpc_link_id" {
+  description = "The ID of the VPC Link"
+  type        = string
+}
+
+variable "alb_listener_arn" {
+  description = "The ARN of the ALB Listener"
+    type        = string
+}
