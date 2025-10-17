@@ -32,10 +32,10 @@ output "alb_sg_arn" {
 
 output "alb_vpc_link_id" {
   description = "The ID of the ALB VPC Link."
-  value       = aws_api_gateway_vpc_link.alb.id
+  value       = aws_api_gateway_vpc_link.main.id
 }
 
 output "alb_vpc_link_arn" {
   description = "The ARN of the ALB VPC Link."
-  value       = aws_api_gateway_vpc_link.alb.arn
+  value       = aws_api_gateway_vpc_link.main.arn
 }
