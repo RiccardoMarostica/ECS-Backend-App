@@ -219,3 +219,40 @@ resource "aws_lb_listener_rule" "main" {
     Name = "${local.service_name_prefix}-listener-rule"
   }
 }
+
+
+#####
+# ECS SERVICE - Service Resource
+# This creates the ECS service that manages running tasks
+# Configures Fargate launch type, networking, load balancing, and deployment settings
+#######
+resource "aws_ecs_service" "main" {
+  name            = "${local.service_name_prefix}-service"
+  cluster         = var.ecs_cluster_id
+  task_definition = aws_ecs_task_definition.main.arn
+  desired_count   = var.desired_count
+  launch_type     = "FARGATE"
+
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  health_check_grace_period_seconds  = var.health_check_grace_period_seconds
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.main.arn
+    container_name   = var.service_name
+    container_port   = var.container_port
+  }
+
+  # Ensure listener rule is created before the service
+  depends_on = [aws_lb_listener_rule.main]
+
+  tags = {
+    Name = "${local.service_name_prefix}-service"
+  }
+}

@@ -20,6 +20,17 @@ variable "service_name" {
   type        = string
 }
 
+# ECS cluster
+variable "ecs_cluster_id" {
+  description = "The ID of the ECS cluster"
+  type        = string
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs for ECS tasks"
+  type        = list(string)
+}
+
 # Networking
 variable "vpc_id" {
   description = "The ID of the VPC"
@@ -135,6 +146,31 @@ variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
   default     = 30
+}
+
+# Service configuration
+variable "desired_count" {
+  description = "Desired number of tasks"
+  type        = number
+  default     = 2
+}
+
+variable "deployment_maximum_percent" {
+  description = "Maximum percentage of tasks during deployment"
+  type        = number
+  default     = 200
+}
+
+variable "deployment_minimum_healthy_percent" {
+  description = "Minimum healthy percentage during deployment"
+  type        = number
+  default     = 100
+}
+
+variable "health_check_grace_period_seconds" {
+  description = "Grace period for health checks after task startup"
+  type        = number
+  default     = 60
 }
 
 # Tags
