@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Tests
+tests/
+
+# Git
+.git/
+.gitignore
+
+# Environment
+.env
+.env.*
+
+# Documentation
+*.md
+README.md
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
