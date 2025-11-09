@@ -189,7 +189,7 @@ variable "autoscaling_min_capacity" {
 variable "autoscaling_max_capacity" {
   description = "Maximum number of tasks"
   type        = number
-  default     = 5
+  default     = 10
 }
 
 variable "autoscaling_target_cpu" {
