@@ -36,4 +36,21 @@ locals {
       }
     }
   ])
+
+  # Validation: CPU and memory combinations for Fargate
+  valid_cpu_memory_combinations = {
+    256  = [512, 1024, 2048]
+    512  = [1024, 2048, 3072, 4096]
+    1024 = [for i in range(2048, 8192 + 1, 1024) : i]
+    2048 = [for i in range(4096, 16384 + 1, 1024) : i]
+    4096 = [for i in range(8192, 30720 + 1, 1024) : i]
+  }
+
+  is_valid_cpu_memory = contains(
+    lookup(local.valid_cpu_memory_combinations, var.container_cpu, []),
+    var.container_memory
+  )
+
+  # Validation: Autoscaling min <= max
+  is_valid_autoscaling = var.autoscaling_max_capacity >= var.autoscaling_min_capacity
 }

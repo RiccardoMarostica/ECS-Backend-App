@@ -164,6 +164,21 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task.arn
   container_definitions    = local.container_definitions
+
+  lifecycle {
+    precondition {
+      condition     = local.is_valid_cpu_memory
+      error_message = <<-EOT
+        Invalid CPU and memory combination for Fargate. Valid combinations:
+        - CPU 256: Memory 512, 1024, 2048
+        - CPU 512: Memory 1024, 2048, 3072, 4096
+        - CPU 1024: Memory 2048-8192 (in 1024 MB increments)
+        - CPU 2048: Memory 4096-16384 (in 1024 MB increments)
+        - CPU 4096: Memory 8192-30720 (in 1024 MB increments)
+        Current values: CPU ${var.container_cpu}, Memory ${var.container_memory}
+      EOT
+    }
+  }
 }
 
 
@@ -271,6 +286,13 @@ resource "aws_appautoscaling_target" "ecs_target" {
   resource_id        = "service/${split("/", var.ecs_cluster_id)[1]}/${aws_ecs_service.main.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  lifecycle {
+    precondition {
+      condition     = local.is_valid_autoscaling
+      error_message = "The autoscaling_max_capacity (${var.autoscaling_max_capacity}) must be greater than or equal to autoscaling_min_capacity (${var.autoscaling_min_capacity})."
+    }
+  }
 }
 
 # Target Tracking Scaling Policy for CPU Utilization

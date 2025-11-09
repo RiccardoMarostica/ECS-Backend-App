@@ -51,11 +51,21 @@ variable "alb_listener_arn" {
 variable "listener_rule_priority" {
   description = "Priority for the ALB listener rule (must be unique)"
   type        = number
+
+  validation {
+    condition     = var.listener_rule_priority > 0 && var.listener_rule_priority <= 50000
+    error_message = "The listener_rule_priority must be a positive integer between 1 and 50000."
+  }
 }
 
 variable "path_pattern" {
   description = "Path pattern for routing (e.g., /users/*)"
   type        = list(string)
+
+  validation {
+    condition     = length(var.path_pattern) > 0 && alltrue([for p in var.path_pattern : can(regex("^/.*", p))])
+    error_message = "The path_pattern must be a non-empty list and each pattern must start with a forward slash (/)."
+  }
 }
 
 variable "health_check_path" {
@@ -68,24 +78,44 @@ variable "health_check_interval" {
   description = "Health check interval in seconds"
   type        = number
   default     = 30
+
+  validation {
+    condition     = var.health_check_interval >= 5 && var.health_check_interval <= 300
+    error_message = "The health_check_interval must be between 5 and 300 seconds."
+  }
 }
 
 variable "health_check_timeout" {
   description = "Health check timeout in seconds"
   type        = number
   default     = 5
+
+  validation {
+    condition     = var.health_check_timeout >= 2 && var.health_check_timeout <= 120
+    error_message = "The health_check_timeout must be between 2 and 120 seconds."
+  }
 }
 
 variable "health_check_healthy_threshold" {
   description = "Number of consecutive successful health checks"
   type        = number
   default     = 2
+
+  validation {
+    condition     = var.health_check_healthy_threshold >= 2 && var.health_check_healthy_threshold <= 10
+    error_message = "The health_check_healthy_threshold must be between 2 and 10."
+  }
 }
 
 variable "health_check_unhealthy_threshold" {
   description = "Number of consecutive failed health checks"
   type        = number
   default     = 3
+
+  validation {
+    condition     = var.health_check_unhealthy_threshold >= 2 && var.health_check_unhealthy_threshold <= 10
+    error_message = "The health_check_unhealthy_threshold must be between 2 and 10."
+  }
 }
 
 # IAM
@@ -115,12 +145,22 @@ variable "container_cpu" {
   description = "CPU units for the task (256, 512, 1024, 2048, 4096)"
   type        = number
   default     = 256
+
+  validation {
+    condition     = contains([256, 512, 1024, 2048, 4096], var.container_cpu)
+    error_message = "The container_cpu must be one of the following valid Fargate values: 256, 512, 1024, 2048, 4096."
+  }
 }
 
 variable "container_memory" {
   description = "Memory for the task in MB (512, 1024, 2048, etc.)"
   type        = number
   default     = 512
+
+  validation {
+    condition     = var.container_memory >= 512 && var.container_memory <= 30720
+    error_message = "The container_memory must be between 512 and 30720 MB."
+  }
 }
 
 variable "container_environment_variables" {
@@ -184,12 +224,22 @@ variable "autoscaling_min_capacity" {
   description = "Minimum number of tasks"
   type        = number
   default     = 1
+
+  validation {
+    condition     = var.autoscaling_min_capacity >= 1
+    error_message = "The autoscaling_min_capacity must be at least 1."
+  }
 }
 
 variable "autoscaling_max_capacity" {
   description = "Maximum number of tasks"
   type        = number
   default     = 10
+
+  validation {
+    condition     = var.autoscaling_max_capacity >= 1
+    error_message = "The autoscaling_max_capacity must be at least 1."
+  }
 }
 
 variable "autoscaling_target_cpu" {
