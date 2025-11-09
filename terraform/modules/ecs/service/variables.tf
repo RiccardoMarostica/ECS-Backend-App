@@ -31,6 +31,52 @@ variable "alb_security_group_id" {
   type        = string
 }
 
+# Load balancing
+variable "alb_listener_arn" {
+  description = "ARN of the ALB listener"
+  type        = string
+}
+
+variable "listener_rule_priority" {
+  description = "Priority for the ALB listener rule (must be unique)"
+  type        = number
+}
+
+variable "path_pattern" {
+  description = "Path pattern for routing (e.g., /users/*)"
+  type        = list(string)
+}
+
+variable "health_check_path" {
+  description = "Health check path for the target group"
+  type        = string
+  default     = "/health"
+}
+
+variable "health_check_interval" {
+  description = "Health check interval in seconds"
+  type        = number
+  default     = 30
+}
+
+variable "health_check_timeout" {
+  description = "Health check timeout in seconds"
+  type        = number
+  default     = 5
+}
+
+variable "health_check_healthy_threshold" {
+  description = "Number of consecutive successful health checks"
+  type        = number
+  default     = 2
+}
+
+variable "health_check_unhealthy_threshold" {
+  description = "Number of consecutive failed health checks"
+  type        = number
+  default     = 3
+}
+
 # IAM
 variable "task_role_policy_statements" {
   description = "Custom IAM policy statements for the task role"
