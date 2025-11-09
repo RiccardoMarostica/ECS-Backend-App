@@ -256,3 +256,36 @@ resource "aws_ecs_service" "main" {
     Name = "${local.service_name_prefix}-service"
   }
 }
+
+
+#####
+# ECS SERVICE - Auto Scaling
+# This creates auto-scaling configuration for the ECS service
+# Scales tasks based on CPU utilization when enabled
+#######
+# Application Auto Scaling Target
+resource "aws_appautoscaling_target" "ecs_target" {
+  count              = var.enable_autoscaling ? 1 : 0
+  max_capacity       = var.autoscaling_max_capacity
+  min_capacity       = var.autoscaling_min_capacity
+  resource_id        = "service/${split("/", var.ecs_cluster_id)[1]}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+# Target Tracking Scaling Policy for CPU Utilization
+resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
+  count              = var.enable_autoscaling ? 1 : 0
+  name               = "${local.service_name_prefix}-cpu-autoscaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_target[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value = var.autoscaling_target_cpu
+  }
+}

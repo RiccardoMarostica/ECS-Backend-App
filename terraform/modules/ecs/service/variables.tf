@@ -173,6 +173,31 @@ variable "health_check_grace_period_seconds" {
   default     = 60
 }
 
+# Auto-scaling
+variable "enable_autoscaling" {
+  description = "Enable auto-scaling for the service"
+  type        = bool
+  default     = false
+}
+
+variable "autoscaling_min_capacity" {
+  description = "Minimum number of tasks"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  description = "Maximum number of tasks"
+  type        = number
+  default     = 5
+}
+
+variable "autoscaling_target_cpu" {
+  description = "Target CPU utilization percentage for auto-scaling"
+  type        = number
+  default     = 70
+}
+
 # Tags
 variable "tags" {
   description = "Additional tags for resources"
