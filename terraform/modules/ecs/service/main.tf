@@ -1,4 +1,20 @@
-# Task Execution IAM Role
+#####
+# ECS SERVICE - CloudWatch Log Group
+# This creates a log group for the ECS service
+# Centralized logging for the ECS service
+#######
+# Create a CloudWatch Log Group for the ECS service
+resource "aws_cloudwatch_log_group" "main" {
+  name              = "/ecs/${var.project_name}/${var.environment}/${var.service_name}"
+  retention_in_days = var.log_retention_days
+}
+
+
+#####
+# ECS SERVICE - Task Execution IAM Role
+# This creates an IAM role for the ECS task execution
+# This role is used by the ECS task to pull container images and write logs to CloudWatch
+#######
 # This role is used by ECS to pull container images and write logs
 resource "aws_iam_role" "task_execution" {
   name = "${local.service_name_prefix}-task-execution-role"
@@ -53,7 +69,12 @@ resource "aws_iam_role_policy" "task_execution_inline" {
   })
 }
 
-# Task IAM Role
+
+#####
+# ECS SERVICE - Task IAM Role
+# This creates an IAM role for the ECS task
+# This role is used by the ECS task to access AWS resource
+#######
 # This role is used by the application running in the container
 resource "aws_iam_role" "task" {
   name = "${local.service_name_prefix}-task-role"
@@ -88,4 +109,23 @@ resource "aws_iam_role_policy" "task_custom" {
       }
     ]
   })
+}
+
+
+#####
+# ECS SERVICE - Task Definition
+# This creates the task definition for the ECS service
+# Defines the container configuration, CPU, memory, and IAM roles
+#######
+resource "aws_ecs_task_definition" "main" {
+  family                   = local.service_name_prefix
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.container_cpu
+  memory                   = var.container_memory
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task.arn
+  container_definitions    = local.container_definitions
+
+  tags = local.common_tags
 }
