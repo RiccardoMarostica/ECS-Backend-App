@@ -20,6 +20,17 @@ variable "service_name" {
   type        = string
 }
 
+# Networking
+variable "vpc_id" {
+  description = "The ID of the VPC"
+  type        = string
+}
+
+variable "alb_security_group_id" {
+  description = "Security group ID of the ALB"
+  type        = string
+}
+
 # IAM
 variable "task_role_policy_statements" {
   description = "Custom IAM policy statements for the task role"

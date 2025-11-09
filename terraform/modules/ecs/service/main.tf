@@ -113,6 +113,44 @@ resource "aws_iam_role_policy" "task_custom" {
 
 
 #####
+# ECS SERVICE - Security Group
+# This creates a security group for the ECS tasks
+# Allows inbound traffic from ALB and all outbound traffic
+#######
+resource "aws_security_group" "ecs_tasks" {
+  name        = "${local.service_name_prefix}-ecs-sg"
+  description = "Security group for ${var.service_name} ECS tasks"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${local.service_name_prefix}-ecs-sg"
+  }
+}
+
+# Ingress rule: Allow traffic from ALB security group on container port
+resource "aws_security_group_rule" "ecs_tasks_ingress_alb" {
+  type                     = "ingress"
+  from_port                = var.container_port
+  to_port                  = var.container_port
+  protocol                 = "tcp"
+  source_security_group_id = var.alb_security_group_id
+  security_group_id        = aws_security_group.ecs_tasks.id
+  description              = "Allow inbound traffic from ALB on container port"
+}
+
+# Egress rule: Allow all outbound traffic
+resource "aws_security_group_rule" "ecs_tasks_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ecs_tasks.id
+  description       = "Allow all outbound traffic"
+}
+
+
+#####
 # ECS SERVICE - Task Definition
 # This creates the task definition for the ECS service
 # Defines the container configuration, CPU, memory, and IAM roles
@@ -126,6 +164,4 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task.arn
   container_definitions    = local.container_definitions
-
-  tags = local.common_tags
 }
