@@ -53,4 +53,9 @@ locals {
 
   # Validation: Autoscaling min <= max
   is_valid_autoscaling = var.autoscaling_max_capacity >= var.autoscaling_min_capacity
+
+  # Extract LoadBalancer ARN suffix from listener ARN for CloudWatch alarms
+  # Listener ARN format: arn:aws:elasticloadbalancing:region:account-id:listener/app/load-balancer-name/load-balancer-id/listener-id
+  # We need: app/load-balancer-name/load-balancer-id
+  alb_arn_suffix = regex("(app/[^/]+/[a-z0-9]+)", var.alb_listener_arn)[0]
 }

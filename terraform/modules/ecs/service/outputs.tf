@@ -58,3 +58,13 @@ output "task_definition_arn" {
   description = "ARN of the task definition"
   value       = aws_ecs_task_definition.main.arn
 }
+
+output "unhealthy_host_alarm_arn" {
+  description = "ARN of the unhealthy host CloudWatch alarm"
+  value       = var.enable_unhealthy_host_alarm ? aws_cloudwatch_metric_alarm.unhealthy_host[0].arn : null
+}
+
+output "unhealthy_host_alarm_name" {
+  description = "Name of the unhealthy host CloudWatch alarm"
+  value       = var.enable_unhealthy_host_alarm ? aws_cloudwatch_metric_alarm.unhealthy_host[0].alarm_name : null
+}

@@ -311,3 +311,38 @@ resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
     target_value = var.autoscaling_target_cpu
   }
 }
+
+
+#####
+# CLOUDWATCH ALARMS - Unhealthy Host Monitoring
+# This creates a CloudWatch alarm to monitor unhealthy hosts in the target group
+# Triggers when the number of unhealthy hosts exceeds the threshold
+#######
+resource "aws_cloudwatch_metric_alarm" "unhealthy_host" {
+  count               = var.enable_unhealthy_host_alarm ? 1 : 0
+  alarm_name          = "${local.service_name_prefix}-unhealthy-hosts"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = var.unhealthy_host_evaluation_periods
+  metric_name         = "UnHealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Average"
+  threshold           = var.unhealthy_host_threshold
+  alarm_description   = "This alarm monitors unhealthy hosts in ${var.service_name} target group"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    TargetGroup  = aws_lb_target_group.main.arn_suffix
+    LoadBalancer = local.alb_arn_suffix
+  }
+
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
+  ok_actions    = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.service_name_prefix}-unhealthy-hosts-alarm"
+    }
+  )
+}

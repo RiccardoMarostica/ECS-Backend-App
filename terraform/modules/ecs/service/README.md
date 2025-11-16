@@ -14,6 +14,7 @@ This Terraform module creates a complete ECS service with all necessary componen
 - Optional CPU-based auto-scaling
 - Support for environment variables and secrets
 - Comprehensive validation for Fargate CPU/memory combinations
+- CloudWatch alarms for monitoring unhealthy hosts
 
 ## Architecture
 
@@ -202,6 +203,7 @@ This module creates the following AWS resources:
 - `aws_cloudwatch_log_group` - Centralized logging
 - `aws_appautoscaling_target` - Auto-scaling target (optional)
 - `aws_appautoscaling_policy` - Auto-scaling policy (optional)
+- `aws_cloudwatch_metric_alarm` - Unhealthy host alarm (optional)
 
 ## Inputs
 
@@ -246,6 +248,10 @@ This module creates the following AWS resources:
 | autoscaling_max_capacity | Maximum number of tasks | `number` | `10` |
 | autoscaling_target_cpu | Target CPU utilization percentage for auto-scaling | `number` | `70` |
 | task_role_policy_statements | Custom IAM policy statements for the task role | `list(object)` | `[]` |
+| enable_unhealthy_host_alarm | Enable CloudWatch alarm for unhealthy hosts | `bool` | `true` |
+| unhealthy_host_threshold | Number of unhealthy hosts to trigger alarm | `number` | `1` |
+| unhealthy_host_evaluation_periods | Number of periods to evaluate for unhealthy hosts | `number` | `2` |
+| alarm_sns_topic_arn | SNS topic ARN for alarm notifications (optional) | `string` | `""` |
 | tags | Additional tags for resources | `map(string)` | `{}` |
 
 ## Outputs
@@ -264,6 +270,8 @@ This module creates the following AWS resources:
 | task_role_arn | ARN of the task IAM role |
 | log_group_name | Name of the CloudWatch log group |
 | log_group_arn | ARN of the CloudWatch log group |
+| unhealthy_host_alarm_arn | ARN of the unhealthy host CloudWatch alarm |
+| unhealthy_host_alarm_name | Name of the unhealthy host CloudWatch alarm |
 
 ## Naming Convention
 
@@ -340,6 +348,102 @@ Logs are organized using the pattern: `/ecs/{project_name}/{environment}/{servic
 Example: `/ecs/myapp/dev/users`
 
 Log streams are prefixed with the service name for easy identification.
+
+## CloudWatch Alarms
+
+### Unhealthy Host Monitoring
+
+The module automatically creates a CloudWatch alarm to monitor unhealthy hosts in the target group. This alarm triggers when ECS tasks fail health checks and become unhealthy.
+
+**Default Configuration:**
+- Enabled by default (`enable_unhealthy_host_alarm = true`)
+- Triggers when 1 or more hosts are unhealthy
+- Evaluates over 2 consecutive periods (2 minutes)
+- Monitors the `UnHealthyHostCount` metric from the ALB target group
+
+**Example with SNS Notifications:**
+
+```hcl
+# Create an SNS topic for alarm notifications
+resource "aws_sns_topic" "alerts" {
+  name = "ecs-service-alerts"
+}
+
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = "team@example.com"
+}
+
+# Configure service with alarm notifications
+module "users_service" {
+  source = "../../modules/ecs/service"
+  
+  # ... other configuration
+  
+  # CloudWatch alarm configuration
+  enable_unhealthy_host_alarm        = true
+  unhealthy_host_threshold           = 1
+  unhealthy_host_evaluation_periods  = 2
+  alarm_sns_topic_arn                = aws_sns_topic.alerts.arn
+}
+```
+
+**Customizing Alarm Behavior:**
+
+```hcl
+module "critical_service" {
+  source = "../../modules/ecs/service"
+  
+  # ... other configuration
+  
+  # More sensitive alarm - trigger immediately on any unhealthy host
+  enable_unhealthy_host_alarm        = true
+  unhealthy_host_threshold           = 1
+  unhealthy_host_evaluation_periods  = 1
+  alarm_sns_topic_arn                = aws_sns_topic.critical_alerts.arn
+}
+
+module "tolerant_service" {
+  source = "../../modules/ecs/service"
+  
+  # ... other configuration
+  
+  # Less sensitive - only alert if 2+ hosts are unhealthy for 3 minutes
+  enable_unhealthy_host_alarm        = true
+  unhealthy_host_threshold           = 2
+  unhealthy_host_evaluation_periods  = 3
+  alarm_sns_topic_arn                = aws_sns_topic.alerts.arn
+}
+```
+
+**Disabling the Alarm:**
+
+```hcl
+module "dev_service" {
+  source = "../../modules/ecs/service"
+  
+  # ... other configuration
+  
+  # Disable alarm in development environment
+  enable_unhealthy_host_alarm = false
+}
+```
+
+**What Triggers an Unhealthy Host:**
+
+A host becomes unhealthy when:
+- The application fails to respond to health check requests
+- Health check returns a non-200 status code
+- Health check times out
+- The container crashes or exits
+- The task is stopped or fails to start
+
+**Alarm States:**
+
+- **OK**: All hosts are healthy
+- **ALARM**: Number of unhealthy hosts meets or exceeds the threshold
+- **INSUFFICIENT_DATA**: Not enough data to evaluate (e.g., service just started)
 
 ## Integration with Other Modules
 

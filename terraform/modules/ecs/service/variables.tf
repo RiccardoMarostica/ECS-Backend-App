@@ -248,6 +248,31 @@ variable "autoscaling_target_cpu" {
   default     = 70
 }
 
+# CloudWatch Alarms
+variable "enable_unhealthy_host_alarm" {
+  description = "Enable CloudWatch alarm for unhealthy hosts"
+  type        = bool
+  default     = true
+}
+
+variable "unhealthy_host_threshold" {
+  description = "Number of unhealthy hosts to trigger alarm"
+  type        = number
+  default     = 1
+}
+
+variable "unhealthy_host_evaluation_periods" {
+  description = "Number of periods to evaluate for unhealthy hosts"
+  type        = number
+  default     = 2
+}
+
+variable "alarm_sns_topic_arn" {
+  description = "SNS topic ARN for alarm notifications (optional)"
+  type        = string
+  default     = ""
+}
+
 # Tags
 variable "tags" {
   description = "Additional tags for resources"
