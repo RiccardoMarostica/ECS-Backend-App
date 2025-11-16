@@ -14,6 +14,12 @@ variable "project_name" {
   type        = string
 }
 
+variable "hosted_zone_id" {
+  description = "The ID of the hosted zone"
+  type        = string
+}
+
+## VPC Variables
 variable "vpc_cidr_block" {
   description = "The CIDR block of the VPC"
   type        = string
@@ -39,7 +45,7 @@ variable "vpc_subnet_private_b_cidr_block" {
   type        = string
 }
 
-## ECS Service variables
+## ECS User service variables
 variable "users_service_image" {
   description = "Docker image for the users service (e.g., ECR URI)"
   type        = string

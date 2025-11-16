@@ -11,6 +11,9 @@ This Terraform module creates an AWS API Gateway REST API with Cognito authentic
 - Automatic redeployment on configuration changes
 - Configurable token TTL for authorization caching
 - Support for IPv4 and IPv6
+- **Custom domain name support with ACM certificate integration**
+- **Automatic Route53 DNS record creation for custom domains**
+- **Base path mapping for seamless custom domain routing**
 
 ## Requirements
 
@@ -36,6 +39,9 @@ This module creates the following AWS resources:
 - `aws_api_gateway_integration` - HTTP_PROXY integration to ALB via VPC Link
 - `aws_api_gateway_deployment` - API deployment
 - `aws_api_gateway_stage` - API stage
+- `aws_api_gateway_domain_name` - Custom domain name (optional)
+- `aws_route53_record` - DNS A record for custom domain (optional)
+- `aws_api_gateway_base_path_mapping` - Maps custom domain to API stage (optional)
 
 ## Usage
 
@@ -149,6 +155,70 @@ module "api_gateway" {
 }
 ```
 
+### Custom Domain Name Example
+
+```hcl
+module "api_gateway" {
+  source = "./modules/api_gateway"
+
+  aws_region   = "us-east-1"
+  environment  = "prod"
+  project_name = "myapp"
+
+  rest_api_name                         = "myapp-api"
+  rest_api_stage_name                   = "prod"
+  rest_api_endpoint_type                = "REGIONAL"
+  rest_api_disable_execute_endpoint     = true  # Disable default endpoint
+  
+  rest_api_authorizer_name              = "cognito-authorizer"
+  rest_api_authorizer_cognito_provider  = [module.cognito.cognito_user_pool_arn]
+  
+  alb_vpc_link_id                       = module.alb.alb_vpc_link_id
+  alb_listener_arn                      = module.alb.listener_arn
+
+  # Custom Domain Configuration
+  rest_api_enable_custom_domain              = true
+  rest_api_custom_domain_name                = "api.example.com"
+  rest_api_custom_domain_certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123..."
+  hosted_zone_id                             = "Z1234567890ABC"
+}
+
+# Output the custom domain URL
+output "api_custom_url" {
+  value = module.api_gateway.api_gateway_custom_domain_url
+}
+```
+
+### Custom Domain with Edge-Optimized Endpoint
+
+```hcl
+# Note: For EDGE endpoints, the ACM certificate MUST be in us-east-1
+module "api_gateway" {
+  source = "./modules/api_gateway"
+
+  aws_region   = "us-east-1"
+  environment  = "prod"
+  project_name = "myapp"
+
+  rest_api_name                         = "myapp-global-api"
+  rest_api_stage_name                   = "prod"
+  rest_api_endpoint_type                = "EDGE"  # Uses CloudFront
+  rest_api_disable_execute_endpoint     = true
+  
+  rest_api_authorizer_name              = "cognito-authorizer"
+  rest_api_authorizer_cognito_provider  = [module.cognito.cognito_user_pool_arn]
+  
+  alb_vpc_link_id                       = module.alb.alb_vpc_link_id
+  alb_listener_arn                      = module.alb.listener_arn
+
+  # Custom Domain Configuration
+  rest_api_enable_custom_domain              = true
+  rest_api_custom_domain_name                = "api.example.com"
+  rest_api_custom_domain_certificate_arn     = "arn:aws:acm:us-east-1:123456789012:certificate/abc123..."
+  hosted_zone_id                             = "Z1234567890ABC"
+}
+```
+
 ## Variables
 
 ### Required Variables
@@ -171,6 +241,10 @@ module "api_gateway" {
 | rest_api_endpoint_type | The type of endpoint for the REST API | `string` | `"REGIONAL"` | `"EDGE"`, `"REGIONAL"` |
 | rest_api_authorizer_type | The type of the authorizer | `string` | `"COGNITO_USER_POOLS"` | - |
 | rest_api_authorizer_ttl | The TTL of cached authorizer results (in seconds) | `number` | `300` | 0-3600 |
+| rest_api_enable_custom_domain | Whether to create a custom domain name for the API | `bool` | `false` | `true`, `false` |
+| rest_api_custom_domain_name | The custom domain name (e.g., api.example.com) | `string` | `""` | Valid domain name |
+| rest_api_custom_domain_certificate_arn | The ARN of the ACM certificate for the custom domain | `string` | `""` | Valid ACM certificate ARN |
+| hosted_zone_id | The Route53 hosted zone ID for DNS record creation | `string` | - | Valid Route53 zone ID |
 
 ## Outputs
 
@@ -179,6 +253,8 @@ module "api_gateway" {
 | api_gateway_invoke_url | The base URL to invoke the API Gateway stage |
 | api_gateway_id | The ID of the API Gateway REST API |
 | api_gateway_execution_arn | The execution ARN of the API Gateway REST API |
+| api_gateway_custom_domain_name | The custom domain name (null if not enabled) |
+| api_gateway_custom_domain_url | The full HTTPS URL for the custom domain (null if not enabled) |
 
 ## Architecture
 
@@ -414,17 +490,168 @@ resource "aws_api_gateway_stage" "main" {
 }
 ```
 
+#### 7. Custom Domain Certificate Error
+
+**Error:**
+```
+Error: error creating API Gateway Domain Name: BadRequestException: 
+The provided certificate does not exist or is not in the correct region
+```
+
+**Causes & Solutions:**
+
+1. **Wrong Region for EDGE endpoint:**
+```hcl
+# EDGE endpoints require certificate in us-east-1
+# Request certificate in us-east-1 regardless of API region
+aws acm request-certificate \
+  --domain-name api.example.com \
+  --region us-east-1
+```
+
+2. **Wrong Region for REGIONAL endpoint:**
+```hcl
+# REGIONAL endpoints require certificate in same region as API
+# If API is in us-west-2, certificate must also be in us-west-2
+aws acm request-certificate \
+  --domain-name api.example.com \
+  --region us-west-2
+```
+
+3. **Certificate not validated:**
+```bash
+# Check certificate status
+aws acm describe-certificate --certificate-arn <arn>
+
+# Status should be "ISSUED", not "PENDING_VALIDATION"
+```
+
+#### 8. Custom Domain DNS Not Resolving
+
+**Error:**
+```bash
+curl: (6) Could not resolve host: api.example.com
+```
+
+**Causes & Solutions:**
+
+1. **DNS propagation delay:**
+```bash
+# Wait 5-10 minutes for DNS propagation
+# Check DNS status
+dig api.example.com
+
+# Check Route53 record
+aws route53 list-resource-record-sets --hosted-zone-id <zone-id>
+```
+
+2. **Wrong hosted zone:**
+```hcl
+# Ensure hosted_zone_id matches your domain
+# Get correct zone ID
+aws route53 list-hosted-zones-by-name --dns-name example.com
+```
+
+3. **Domain not pointing to Route53:**
+```bash
+# Check nameservers
+dig NS example.com
+
+# Should match Route53 nameservers from hosted zone
+```
+
+#### 9. Custom Domain SSL/TLS Error
+
+**Error:**
+```
+curl: (60) SSL certificate problem: unable to get local issuer certificate
+```
+
+**Solution:**
+
+This usually means the certificate isn't properly attached or validated:
+
+```bash
+# Verify certificate is attached to domain
+aws apigateway get-domain-name --domain-name api.example.com
+
+# Check certificate status in ACM
+aws acm describe-certificate --certificate-arn <arn> --region us-east-1
+
+# Test SSL
+openssl s_client -connect api.example.com:443 -servername api.example.com
+```
+
 ## Limitations
 
 1. **Single Proxy Resource**: Only supports catch-all {proxy+} routing
 2. **No CORS Support**: CORS headers not configured
 3. **HTTP Only**: Integration uses HTTP, not HTTPS to ALB
-4. **No Custom Domain**: Custom domain names not supported
-5. **No WAF**: Web Application Firewall not integrated
-6. **No API Keys**: API key authentication not configured
-7. **No Usage Plans**: Rate limiting and throttling not configured
-8. **No Logging**: CloudWatch logging not enabled
-9. **Variable Naming Issue**: `alb_listener_arn` should accept ALB ARN, not listener ARN
+4. **No WAF**: Web Application Firewall not integrated
+5. **No API Keys**: API key authentication not configured
+6. **No Usage Plans**: Rate limiting and throttling not configured
+7. **No Logging**: CloudWatch logging not enabled
+8. **Variable Naming Issue**: `alb_listener_arn` should accept ALB ARN, not listener ARN
+
+## Custom Domain Configuration
+
+### Prerequisites
+
+Before enabling custom domain support, ensure you have:
+
+1. **ACM Certificate**: A valid SSL/TLS certificate in AWS Certificate Manager
+   - For **REGIONAL** endpoints: Certificate must be in the same region as the API
+   - For **EDGE** endpoints: Certificate **must** be in `us-east-1` (CloudFront requirement)
+
+2. **Route53 Hosted Zone**: A hosted zone for your domain in Route53
+
+3. **Domain Ownership**: Verified ownership of the domain
+
+### Certificate Requirements
+
+```bash
+# For REGIONAL endpoint (certificate in same region as API)
+aws acm request-certificate \
+  --domain-name api.example.com \
+  --validation-method DNS \
+  --region us-east-1
+
+# For EDGE endpoint (certificate MUST be in us-east-1)
+aws acm request-certificate \
+  --domain-name api.example.com \
+  --validation-method DNS \
+  --region us-east-1
+```
+
+### DNS Configuration
+
+The module automatically creates:
+- An A record in Route53 pointing to the API Gateway domain
+- Proper alias configuration for both REGIONAL and EDGE endpoints
+- Health check evaluation for the target
+
+### Accessing Your API
+
+Once configured, your API will be accessible at:
+
+```bash
+# Default endpoint (if not disabled)
+https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/path
+
+# Custom domain endpoint
+https://api.example.com/path
+```
+
+### Disabling Default Endpoint
+
+For production, disable the default execute-api endpoint:
+
+```hcl
+rest_api_disable_execute_endpoint = true
+rest_api_enable_custom_domain     = true
+```
+
+This ensures all traffic goes through your custom domain.
 
 ## Best Practices
 
@@ -435,6 +662,8 @@ resource "aws_api_gateway_stage" "main" {
 5. **Use Custom Domains**: Configure custom domain names for production APIs
 6. **Implement Rate Limiting**: Add usage plans and API keys for rate limiting
 7. **Enable WAF**: Protect against common web exploits
+8. **Certificate Region**: Ensure ACM certificate is in the correct region (us-east-1 for EDGE, same region for REGIONAL)
+9. **DNS Propagation**: Allow 5-10 minutes for DNS changes to propagate after deployment
 
 ## Security Considerations
 
@@ -459,7 +688,6 @@ Estimated monthly cost: ~$7.20 + usage-based charges
 ## Future Enhancements
 
 - Add CORS configuration support
-- Add custom domain name support
 - Add CloudWatch logging configuration
 - Add WAF integration
 - Add usage plans and API keys
@@ -468,6 +696,8 @@ Estimated monthly cost: ~$7.20 + usage-based charges
 - Add caching configuration
 - Support for HTTPS integration to ALB
 - Fix variable naming (alb_listener_arn should be alb_arn)
+- Add support for custom base path in domain mapping
+- Add support for multiple custom domains
 
 ## Notes
 

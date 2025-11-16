@@ -1,6 +1,7 @@
 aws_region   = "eu-west-1"
 environment  = "dev"
 project_name = "rm-ms-api"
+hosted_zone_id = ""
 
 vpc_cidr_block                  = "10.0.0.0/16"
 vpc_subnet_public_a_cidr_block  = "10.0.1.0/24"

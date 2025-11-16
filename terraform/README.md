@@ -6,47 +6,47 @@ This repository contains Terraform infrastructure as code for deploying a micros
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Internet/Clients                             │
+│                         Internet/Clients                            │
 └────────────────────────────┬────────────────────────────────────────┘
                              │
                              │ HTTPS (with Cognito JWT)
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      AWS API Gateway                                 │
+│                      AWS API Gateway                                │
 │  - REST API with Cognito Authorizer                                 │
 │  - Path-based routing to microservices                              │
 └────────────────────────────┬────────────────────────────────────────┘
                              │
                              │ VPC Link
                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                            VPC                                       │
+┌────────────────────────────────────────────────────────────────────┐
+│                            VPC                                     │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │              Internal Application Load Balancer               │  │
-│  │              - Path-based routing                             │  │
-│  │              - Health checks                                  │  │
+│  │              Internal Application Load Balancer              │  │
+│  │              - Path-based routing                            │  │
+│  │              - Health checks                                 │  │
 │  └────────────────────────┬─────────────────────────────────────┘  │
-│                           │                                          │
+│                           │                                        │
 │  ┌────────────────────────┴─────────────────────────────────────┐  │
-│  │                    ECS Cluster (Fargate)                      │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │  │
-│  │  │   Users      │  │  Products    │  │   Orders     │       │  │
-│  │  │   Service    │  │  Service     │  │   Service    │       │  │
-│  │  │              │  │              │  │              │       │  │
-│  │  │  /users/*    │  │ /products/*  │  │  /orders/*   │       │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘       │  │
-│  │                                                                │  │
-│  │  - Auto-scaling based on CPU                                  │  │
-│  │  - CloudWatch Container Insights                              │  │
-│  │  - Private subnets (no direct internet access)                │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │                    Cognito User Pool                            │  │
-│  │  - User authentication                                          │  │
-│  │  - JWT token generation                                         │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+│  │                    ECS Cluster (Fargate)                     │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │  │
+│  │  │   Users      │  │  Products    │  │   Orders     │        │  │
+│  │  │   Service    │  │  Service     │  │   Service    │        │  │
+│  │  │              │  │              │  │              │        │  │
+│  │  │  /users/*    │  │ /products/*  │  │  /orders/*   │        │  │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘        │  │
+│  │                                                              │  │
+│  │  - Auto-scaling based on CPU                                 │  │
+│  │  - CloudWatch Container Insights                             │  │
+│  │  - Private subnets (no direct internet access)               │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                    Cognito User Pool                         │  │
+│  │  - User authentication                                       │  │
+│  │  - JWT token generation                                      │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Project Structure

@@ -13,9 +13,9 @@ module "vpc" {
   source = "../../modules/vpc"
 
   # Global variables
-  aws_region                      = var.aws_region
-  environment                     = var.environment
-  project_name                    = var.project_name
+  aws_region   = var.aws_region
+  environment  = var.environment
+  project_name = var.project_name
 
   # VPC variables  
   vpc_cidr_block                  = var.vpc_cidr_block
@@ -30,9 +30,9 @@ module "alb" {
   source = "../../modules/alb"
 
   # Global variables
-  aws_region          = var.aws_region
-  environment         = var.environment
-  project_name        = var.project_name
+  aws_region   = var.aws_region
+  environment  = var.environment
+  project_name = var.project_name
 
   # VPC variables
   vpc_id              = module.vpc.vpc_id
@@ -44,6 +44,12 @@ module "alb" {
 module "rest_api" {
   source = "../../modules/api_gateway"
 
+  # Global variables
+  aws_region     = var.aws_region
+  environment    = var.environment
+  project_name   = var.project_name
+  hosted_zone_id = var.hosted_zone_id
+
   # API variable
   rest_api_name                        = "${var.project_name}-${var.environment}-rest-api"
   rest_api_authorizer_name             = "${var.project_name}-${var.environment}-rest-api-authorizer"
@@ -51,8 +57,8 @@ module "rest_api" {
   rest_api_stage_name                  = var.environment
 
   # VPC Link variables
-  alb_listener_arn                     = module.alb.listener_arn
-  alb_vpc_link_id                      = module.alb.alb_vpc_link_id
+  alb_listener_arn = module.alb.listener_arn
+  alb_vpc_link_id  = module.alb.alb_vpc_link_id
 }
 
 ## ECS CLUSTER
@@ -60,9 +66,9 @@ module "ecs_cluster" {
   source = "../../modules/ecs/cluster"
 
   # API variable
-  aws_region                = var.aws_region
-  environment               = var.environment
-  project_name              = var.project_name
+  aws_region   = var.aws_region
+  environment  = var.environment
+  project_name = var.project_name
 
   # ECS cluster variables
   enable_container_insights = true

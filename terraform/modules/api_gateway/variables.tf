@@ -1,3 +1,25 @@
+# Global variables
+variable "aws_region" {
+  description = "The AWS Region where resources will be created"
+  type        = string
+}
+
+variable "environment" {
+  description = "Defines the deployment environment (dev, qa, prod)"
+  type        = string
+}
+
+variable "project_name" {
+  description = "The name of the project"
+  type        = string
+}
+
+variable "hosted_zone_id" {
+  description = "The ID of the hosted zone"
+  type        = string
+}
+
+# API Gateway variables
 variable "rest_api_name" {
   description = "The name of the REST API"
   type        = string
@@ -29,6 +51,8 @@ variable "rest_api_endpoint_type" {
   }
 }
 
+
+# API Gateway - Cognito Authorizer
 variable "rest_api_authorizer_name" {
   description = "The name of the authorizer"
   type        = string
@@ -52,11 +76,32 @@ variable "rest_api_authorizer_cognito_provider" {
   default     = []
 }
 
+# API Gateway - Deployment options
 variable "rest_api_stage_name" {
   description = "The name of the stage, which is exactly the name of the environment"
   type        = string
 }
 
+# API Gateway - Custom domain
+variable "rest_api_enable_custom_domain" {
+  description = "Whether to create a custom domain name for the API"
+  type        = bool
+  default     = false
+}
+
+variable "rest_api_custom_domain_certificate_arn" {
+  description = "The ARN of the ACM certificate to create the custom domain"
+  type        = string
+  default     = ""
+}
+
+variable "rest_api_custom_domain_name" {
+  description = "The name of the custom domain"
+  type        = string
+  default     = ""
+}
+
+# ALB parameters
 variable "alb_vpc_link_id" {
   description = "The ID of the VPC Link"
   type        = string
@@ -64,5 +109,5 @@ variable "alb_vpc_link_id" {
 
 variable "alb_listener_arn" {
   description = "The ARN of the ALB Listener"
-    type        = string
+  type        = string
 }
